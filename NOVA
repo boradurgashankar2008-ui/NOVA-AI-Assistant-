@@ -1,0 +1,125 @@
+import requests
+
+# ============================================================
+# NOVA V1
+# Local AI Assistant
+# Conversation + Question Solving
+# ============================================================
+
+ASSISTANT_NAME = "NOVA"
+
+OLLAMA_URL = "http://localhost:11434/api/chat"
+OLLAMA_MODEL = "gemma3:1b"
+
+
+def ask_ollama(user_message):
+    payload = {
+        "model": OLLAMA_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are NOVA, a helpful personal AI assistant. "
+                    "Talk naturally with the user. "
+                    "Answer questions clearly and accurately. "
+                    "Solve problems step by step when useful. "
+                    "Keep answers understandable and practical. "
+                    "Do not claim to have performed actions that you did not perform."
+                )
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ],
+        "stream": False
+    }
+
+    try:
+        response = requests.post(
+            OLLAMA_URL,
+            json=payload,
+            timeout=120
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        return data["message"]["content"].strip()
+
+    except requests.exceptions.ConnectionError:
+        return "I cannot connect to Ollama. Please make sure Ollama is running."
+
+    except requests.exceptions.Timeout:
+        return "Ollama took too long to respond. Please try again."
+
+    except requests.exceptions.RequestException as error:
+        return f"Ollama connection error: {error}"
+
+    except KeyError:
+        return "I received an unexpected response from Ollama."
+
+    except Exception as error:
+        return f"Unexpected error: {error}"
+
+
+def show_banner():
+    print()
+    print("=" * 60)
+    print("                    NOVA V1")
+    print("=" * 60)
+    print(" Local AI Assistant")
+    print(f" Model : {OLLAMA_MODEL}")
+    print(" Mode  : Conversation + Question Solving")
+    print(" AI    : Ollama")
+    print("=" * 60)
+    print()
+
+    print("NOVA: Hello Boss. I am ready.")
+    print("Type your message below.")
+    print("Type 'exit' to close NOVA.")
+    print()
+
+
+def main():
+    show_banner()
+
+    while True:
+        try:
+            user_message = input("You: ").strip()
+
+            if not user_message:
+                continue
+
+            if user_message.lower() in {
+                "exit",
+                "quit",
+                "bye",
+                "shutdown"
+            }:
+                print("NOVA: Goodbye Boss.")
+                break
+
+            print()
+            print("NOVA: Thinking...")
+
+            answer = ask_ollama(user_message)
+
+            print()
+            print(f"NOVA: {answer}")
+            print()
+
+        except KeyboardInterrupt:
+            print()
+            print("NOVA: Goodbye Boss.")
+            break
+
+        except EOFError:
+            print()
+            print("NOVA: Goodbye Boss.")
+            break
+
+
+if __name__ == "__main__":
+    main()
